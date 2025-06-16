@@ -80,7 +80,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 transform = transforms.Compose([
     transforms.Resize((100, 100)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Cambio 2: normalización
+    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
 @app.post("/registrar_usuario")
@@ -90,40 +90,33 @@ async def registrar_usuario(
     codigo: str = Form(...),
     correo: str = Form(...),
     requisitoriado: bool = Form(...),
-    imagen: UploadFile = File(...)  # asegurado el tipo File
+    imagen: UploadFile = File(...)
 ):
     try:
-        # Leer imagen
         image_bytes = await imagen.read()
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_tensor = transform(img).unsqueeze(0).to("cpu")
 
-        # Embedding
         with torch.no_grad():
-            embedding = extractor(img_tensor).float()  # Cambio 1: forzar float
+            embedding = extractor(img_tensor).float()
         embedding_list = embedding.squeeze().tolist()
         embedding_json = json.dumps(embedding_list)
 
-        # Conectar a base de datos
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
 
-        # Verificar duplicado por código o correo
         cursor.execute("SELECT COUNT(*) FROM usuario WHERE codigo = %s OR correo = %s", (codigo, correo))
         if cursor.fetchone()[0] > 0:
             raise HTTPException(status_code=400, detail="⚠️ Código o correo ya registrados")
 
-        # Verificar duplicado por similitud facial
         cursor.execute("SELECT kp FROM usuario")
         registros = cursor.fetchall()
         for (kp_json,) in registros:
-            kp_array = torch.tensor(json.loads(kp_json), dtype=torch.float32).unsqueeze(0)  # Cambio 1
+            kp_array = torch.tensor(json.loads(kp_json), dtype=torch.float32).unsqueeze(0)
             sim = cosine_similarity(embedding, kp_array).item()
-            print(f"Similitud con un usuario en DB: {sim:.4f}")  # Cambio 3: imprimir similitud
             if sim > 0.85:
                 raise HTTPException(status_code=400, detail=f"❌ Rostro ya registrado con similitud {sim:.4f}")
 
-        # Insertar en la base de datos
         sql = """
         INSERT INTO usuario (nombre, apellido, codigo, correo, requisitoriado, foto, kp)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
