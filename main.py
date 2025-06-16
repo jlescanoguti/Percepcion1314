@@ -8,6 +8,9 @@ import json
 import mysql.connector
 from torch.nn.functional import cosine_similarity
 import pickle
+import os
+from pathlib import Path
+import subprocess
 
 app = FastAPI()
 
@@ -29,10 +32,6 @@ config = {
     'database': 'railway'
 }
 
-# Cargar clases
-with open("clases.pkl", "rb") as f:
-    clases = pickle.load(f)
-
 # Modelo y extractor
 class CNNClasificador(torch.nn.Module):
     def __init__(self, num_classes):
@@ -45,7 +44,7 @@ class CNNClasificador(torch.nn.Module):
         self.flatten = torch.nn.Flatten()
         self.fc1 = torch.nn.Linear(64 * 12 * 12, 128)
         self.relu = torch.nn.ReLU()
-        self.output = torch.nn.Linear(128, num_classes)
+        self.output = torch.nn.Linear(128, len(clases))
 
     def forward(self, x):
         x = self.features(x)
@@ -68,6 +67,10 @@ class ExtractorEmbeddings(torch.nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         return x
+
+# Cargar clases
+with open("clases.pkl", "rb") as f:
+    clases = pickle.load(f)
 
 model = CNNClasificador(num_classes=len(clases))
 model.load_state_dict(torch.load("cnn_model.pth", map_location=torch.device("cpu")))
@@ -93,10 +96,29 @@ async def registrar_usuario(
     imagen: UploadFile = File(...)
 ):
     try:
+        nombre_usuario = f"{nombre}{apellido}".replace(" ", "")
+        carpeta_usuario = Path("dataset_augmented") / nombre_usuario
+        carpeta_usuario.mkdir(parents=True, exist_ok=True)
+
         image_bytes = await imagen.read()
+        img_path = carpeta_usuario / f"{nombre_usuario}.jpg"
+        with open(img_path, "wb") as f:
+            f.write(image_bytes)
+
+        subprocess.run(["python", "entrenar_modelo.py"], check=True)
+
+        # Recargar modelo y extractor tras reentrenamiento
+        global clases, model, extractor
+        with open("clases.pkl", "rb") as f:
+            clases = pickle.load(f)
+        model = CNNClasificador(num_classes=len(clases))
+        model.load_state_dict(torch.load("cnn_model.pth", map_location="cpu"))
+        model.eval()
+        extractor = ExtractorEmbeddings(model)
+        extractor.eval()
+
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_tensor = transform(img).unsqueeze(0).to("cpu")
-
         with torch.no_grad():
             embedding = extractor(img_tensor).float()
         embedding_list = embedding.squeeze().tolist()
@@ -114,7 +136,7 @@ async def registrar_usuario(
         for (kp_json,) in registros:
             kp_array = torch.tensor(json.loads(kp_json), dtype=torch.float32).unsqueeze(0)
             sim = cosine_similarity(embedding, kp_array).item()
-            if sim > 0.85:
+            if sim > 0.70:
                 raise HTTPException(status_code=400, detail=f"❌ Rostro ya registrado con similitud {sim:.4f}")
 
         sql = """
@@ -127,10 +149,80 @@ async def registrar_usuario(
         cursor.close()
         conn.close()
 
-        return {"mensaje": "✅ Usuario registrado correctamente"}
+        return {"mensaje": "✅ Usuario registrado y modelo actualizado"}
+
+    except subprocess.CalledProcessError:
+        raise HTTPException(status_code=500, detail="❌ Error al reentrenar el modelo")
 
     except mysql.connector.Error as e:
-        raise HTTPException(status_code=500, detail=f"Error en la base de datos: {e}")
+        raise HTTPException(status_code=500, detail=f"❌ Error en la base de datos: {e}")
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error general: {e}")
+        raise HTTPException(status_code=500, detail=f"❌ Error general: {e}")
+
+@app.delete("/reiniciar_usuarios")
+def reiniciar_usuarios():
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        cursor.execute("TRUNCATE TABLE usuario")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"mensaje": "✅ Tabla 'usuario' reiniciada correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {e}")
+
+@app.post("/comparar_rostro")
+async def comparar_rostro(imagen: UploadFile = File(...)):
+    try:
+        image_bytes = await imagen.read()
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        img_tensor = transform(img).unsqueeze(0).to("cpu")
+
+        with torch.no_grad():
+            embedding = extractor(img_tensor).float()
+
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuario")
+        usuarios = cursor.fetchall()
+
+        mejor_similitud = 0.0
+        usuario_encontrado = None
+
+        for usuario in usuarios:
+            kp_array = torch.tensor(json.loads(usuario["kp"]), dtype=torch.float32).unsqueeze(0)
+            similitud = cosine_similarity(embedding, kp_array).item()
+
+            if similitud > mejor_similitud and similitud > 0.70:
+                mejor_similitud = similitud
+                usuario_encontrado = usuario
+
+        cursor.close()
+        conn.close()
+
+        if usuario_encontrado:
+            alerta = usuario_encontrado["requisitoriado"] == 1
+            return {
+                "mensaje": "✅ Usuario identificado con éxito",
+                "similitud": mejor_similitud,
+                "usuario": {
+                    "nombre": usuario_encontrado["nombre"],
+                    "apellido": usuario_encontrado["apellido"],
+                    "codigo": usuario_encontrado["codigo"],
+                    "correo": usuario_encontrado["correo"],
+                    "requisitoriado": bool(usuario_encontrado["requisitoriado"]),
+                },
+                "alerta": alerta,
+                "notificacion": "🚨 ¡ALERTA DE SEGURIDAD! Usuario requisitoriado detectado. Notificación enviada a la Policía (simulada)" if alerta else None
+            }
+
+        return {
+            "mensaje": "❌ No se encontró coincidencia con ningún usuario registrado",
+            "similitud_maxima": mejor_similitud
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"❌ Error en la comparación facial: {e}")
