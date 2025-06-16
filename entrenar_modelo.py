@@ -48,7 +48,7 @@ clases = dataset.classes
 with open(CLASES_PATH, "wb") as f:
     pickle.dump(clases, f)
 
-# === Entrenamiento ===
+# === Entrenamiento del modelo ===
 model = CNNClasificador(num_classes=len(clases))
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -62,8 +62,8 @@ for epoch in range(10):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
-    print(f"Época {epoch+1}/10 - Pérdida: {total_loss:.4f}")
+    print(f"🔁 Época {epoch+1}/10 - Pérdida total: {total_loss:.4f}")
 
-# === Guardar modelo ===
+# === Guardar modelo entrenado ===
 torch.save(model.state_dict(), MODEL_PATH)
 print("✅ Modelo y clases guardados correctamente.")

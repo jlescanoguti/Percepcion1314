@@ -68,7 +68,7 @@ class ExtractorEmbeddings(torch.nn.Module):
         x = self.relu(x)
         return x
 
-# Cargar clases
+# === Cargar modelo entrenado y clases ===
 with open("clases.pkl", "rb") as f:
     clases = pickle.load(f)
 
@@ -78,14 +78,13 @@ model.eval()
 extractor = ExtractorEmbeddings(model)
 extractor.eval()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 transform = transforms.Compose([
     transforms.Resize((100, 100)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
+# === Ruta: Registrar nuevo usuario ===
 @app.post("/registrar_usuario")
 async def registrar_usuario(
     nombre: str = Form(...),
@@ -107,7 +106,7 @@ async def registrar_usuario(
 
         subprocess.run(["python", "entrenar_modelo.py"], check=True)
 
-        # Recargar modelo y extractor tras reentrenamiento
+        # Recargar modelo
         global clases, model, extractor
         with open("clases.pkl", "rb") as f:
             clases = pickle.load(f)
@@ -118,48 +117,120 @@ async def registrar_usuario(
         extractor.eval()
 
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        img_tensor = transform(img).unsqueeze(0).to("cpu")
+        img_tensor = transform(img).unsqueeze(0)
         with torch.no_grad():
             embedding = extractor(img_tensor).float()
-        embedding_list = embedding.squeeze().tolist()
-        embedding_json = json.dumps(embedding_list)
+        embedding_json = json.dumps(embedding.squeeze().tolist())
 
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
-
         cursor.execute("SELECT COUNT(*) FROM usuario WHERE codigo = %s OR correo = %s", (codigo, correo))
         if cursor.fetchone()[0] > 0:
             raise HTTPException(status_code=400, detail="⚠️ Código o correo ya registrados")
 
         cursor.execute("SELECT kp FROM usuario")
-        registros = cursor.fetchall()
-        for (kp_json,) in registros:
+        for (kp_json,) in cursor.fetchall():
             kp_array = torch.tensor(json.loads(kp_json), dtype=torch.float32).unsqueeze(0)
             sim = cosine_similarity(embedding, kp_array).item()
             if sim > 0.70:
                 raise HTTPException(status_code=400, detail=f"❌ Rostro ya registrado con similitud {sim:.4f}")
 
-        sql = """
-        INSERT INTO usuario (nombre, apellido, codigo, correo, requisitoriado, foto, kp)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        valores = (nombre, apellido, codigo, correo, requisitoriado, image_bytes, embedding_json)
-        cursor.execute(sql, valores)
+        sql = """INSERT INTO usuario (nombre, apellido, codigo, correo, requisitoriado, foto, kp)
+                 VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        cursor.execute(sql, (nombre, apellido, codigo, correo, requisitoriado, image_bytes, embedding_json))
         conn.commit()
         cursor.close()
         conn.close()
-
         return {"mensaje": "✅ Usuario registrado y modelo actualizado"}
 
     except subprocess.CalledProcessError:
         raise HTTPException(status_code=500, detail="❌ Error al reentrenar el modelo")
-
-    except mysql.connector.Error as e:
-        raise HTTPException(status_code=500, detail=f"❌ Error en la base de datos: {e}")
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"❌ Error general: {e}")
 
+# === Ruta: Listar todos los usuarios ===
+@app.get("/usuarios")
+def listar_usuarios():
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, nombre, apellido, codigo, correo, requisitoriado FROM usuario")
+        resultado = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return resultado
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# === Ruta: Consultar usuario por código ===
+@app.get("/usuario/{codigo}")
+def obtener_usuario(codigo: str):
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, nombre, apellido, codigo, correo, requisitoriado FROM usuario WHERE codigo = %s", (codigo,))
+        usuario = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if usuario:
+            return usuario
+        raise HTTPException(status_code=404, detail="❌ Usuario no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# === Ruta: Editar usuario existente ===
+@app.put("/usuario/{codigo}")
+async def actualizar_usuario(
+    codigo: str,
+    nombre: str = Form(...),
+    apellido: str = Form(...),
+    correo: str = Form(...),
+    requisitoriado: bool = Form(...),
+    imagen: UploadFile = File(None)
+):
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+
+        if imagen:
+            image_bytes = await imagen.read()
+            img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            img_tensor = transform(img).unsqueeze(0)
+            with torch.no_grad():
+                embedding = extractor(img_tensor).float()
+            embedding_json = json.dumps(embedding.squeeze().tolist())
+
+            sql = """UPDATE usuario SET nombre=%s, apellido=%s, correo=%s,
+                     requisitoriado=%s, foto=%s, kp=%s WHERE codigo=%s"""
+            cursor.execute(sql, (nombre, apellido, correo, requisitoriado,
+                                 image_bytes, embedding_json, codigo))
+        else:
+            sql = """UPDATE usuario SET nombre=%s, apellido=%s, correo=%s,
+                     requisitoriado=%s WHERE codigo=%s"""
+            cursor.execute(sql, (nombre, apellido, correo, requisitoriado, codigo))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"mensaje": "✅ Usuario actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# === Ruta: Eliminar usuario por código ===
+@app.delete("/usuario/{codigo}")
+def eliminar_usuario(codigo: str):
+    try:
+        conn = mysql.connector.connect(**config)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM usuario WHERE codigo = %s", (codigo,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"mensaje": "✅ Usuario eliminado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# === Ruta: Reiniciar base de usuarios ===
 @app.delete("/reiniciar_usuarios")
 def reiniciar_usuarios():
     try:
@@ -173,29 +244,26 @@ def reiniciar_usuarios():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {e}")
 
+# === Ruta: Comparar rostro capturado ===
 @app.post("/comparar_rostro")
 async def comparar_rostro(imagen: UploadFile = File(...)):
     try:
         image_bytes = await imagen.read()
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        img_tensor = transform(img).unsqueeze(0).to("cpu")
-
+        img_tensor = transform(img).unsqueeze(0)
         with torch.no_grad():
             embedding = extractor(img_tensor).float()
 
         conn = mysql.connector.connect(**config)
         cursor = conn.cursor(dictionary=True)
-
         cursor.execute("SELECT * FROM usuario")
         usuarios = cursor.fetchall()
 
         mejor_similitud = 0.0
         usuario_encontrado = None
-
         for usuario in usuarios:
             kp_array = torch.tensor(json.loads(usuario["kp"]), dtype=torch.float32).unsqueeze(0)
             similitud = cosine_similarity(embedding, kp_array).item()
-
             if similitud > mejor_similitud and similitud > 0.70:
                 mejor_similitud = similitud
                 usuario_encontrado = usuario
