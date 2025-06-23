@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 8000
 
 # Comando para iniciar el servidor
-CMD bash -c "uvicorn main:app --host 0.0.0.0 --port $PORT"
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
