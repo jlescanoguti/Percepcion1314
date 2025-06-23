@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 8,
           shadowColor: Colors.black26,
           shape: RoundedRectangleBorder(
@@ -68,7 +68,7 @@ class LandingPage extends StatelessWidget {
         ),
         child: SafeArea(
           child: Column(
-            children: [
+        children: [
               // Header con título
               Container(
                 padding: const EdgeInsets.all(24),
@@ -323,11 +323,11 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
                 // Header con icono
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -379,26 +379,26 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                         _buildTextField(
                           label: 'Nombre',
                           icon: Icons.person,
-                          onChanged: (val) => nombre = val,
-                        ),
+                onChanged: (val) => nombre = val,
+              ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           label: 'Apellido',
                           icon: Icons.person_outline,
-                          onChanged: (val) => apellido = val,
-                        ),
+                onChanged: (val) => apellido = val,
+              ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           label: 'Código',
                           icon: Icons.badge,
-                          onChanged: (val) => codigo = val,
-                        ),
+                onChanged: (val) => codigo = val,
+              ),
                         const SizedBox(height: 16),
                         _buildTextField(
                           label: 'Correo',
                           icon: Icons.email,
-                          onChanged: (val) => correo = val,
-                        ),
+                onChanged: (val) => correo = val,
+              ),
                         const SizedBox(height: 16),
                         Container(
                           decoration: BoxDecoration(
@@ -408,8 +408,8 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                           child: SwitchListTile(
                             title: const Text('Requisitoriado'),
                             subtitle: const Text('Marcar si el usuario tiene requisitoria'),
-                            value: requisitoriado,
-                            onChanged: (val) => setState(() => requisitoriado = val),
+                value: requisitoriado,
+                onChanged: (val) => setState(() => requisitoriado = val),
                             activeColor: Colors.red,
                           ),
                         ),
@@ -433,7 +433,7 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        imagen == null
+              imagen == null
                             ? Container(
                                 height: 200,
                                 decoration: BoxDecoration(
@@ -475,12 +475,12 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                                 ),
                               ),
                         const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: pickImageCamera,
+                    onPressed: pickImageCamera,
                                 icon: const Icon(Icons.camera_alt),
                                 label: const Text('Cámara'),
                                 style: ElevatedButton.styleFrom(
@@ -492,7 +492,7 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: pickImageGallery,
+                    onPressed: pickImageGallery,
                                 icon: const Icon(Icons.photo_library),
                                 label: const Text('Galería'),
                                 style: ElevatedButton.styleFrom(
@@ -500,9 +500,9 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                                   foregroundColor: Colors.white,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                  ),
+                ],
+              ),
                       ],
                     ),
                   ),
@@ -513,7 +513,7 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: registrarUsuario,
+                onPressed: registrarUsuario,
                     icon: const Icon(Icons.save),
                     label: const Text(
                       'Registrar Usuario',
@@ -673,11 +673,11 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                       ],
                     ),
                   )
-                : ListView.builder(
+          : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: usuarios.length,
-                    itemBuilder: (context, i) {
-                      final u = usuarios[i];
+              itemCount: usuarios.length,
+              itemBuilder: (context, i) {
+                final u = usuarios[i];
                       final isRequisitoriado = u['requisitoriado'] == 1 || u['requisitoriado'] == true;
                       
                       return Card(
@@ -780,7 +780,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                       );
                     },
                   ),
-      ),
+            ),
     );
   }
 }
@@ -813,12 +813,23 @@ class _ConsultarUsuarioScreenState extends State<ConsultarUsuarioScreen> {
     try {
       final url = 'https://percepcion1314-production.up.railway.app/usuario/$codigo';
       final resp = await http.get(Uri.parse(url));
-      
+      print('Respuesta backend: ${resp.body}');
       if (resp.statusCode == 200) {
-        setState(() {
-          usuario = json.decode(resp.body);
-          cargando = false;
-        });
+        final data = json.decode(resp.body);
+        if (data is Map) {
+          setState(() {
+            usuario = Map<String, dynamic>.from(data);
+            cargando = false;
+          });
+        } else {
+          setState(() {
+            usuario = null;
+            cargando = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Respuesta inesperada del servidor.')),
+          );
+        }
       } else if (resp.statusCode == 404) {
         setState(() {
           usuario = null;
@@ -848,67 +859,319 @@ class _ConsultarUsuarioScreenState extends State<ConsultarUsuarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Consultar Usuario por Código')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
+      appBar: AppBar(
+        title: const Text('Consultar Usuario'),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF6750A4), Color(0xFF9C27B0)],
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8F9FA), Color(0xFFE8EAF6)],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView(
             children: [
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Código del usuario',
-                  border: OutlineInputBorder(),
+              // Header con icono
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
-                onChanged: (val) => codigo = val,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.search,
+                        size: 40,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Buscar Usuario',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: cargando ? null : consultarUsuario,
-                child: cargando 
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Consultar Usuario'),
+              const SizedBox(height: 20),
+              // Campo de búsqueda
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Código del usuario',
+                          prefixIcon: const Icon(Icons.badge, color: Colors.orange),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.orange, width: 2),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        onChanged: (val) => codigo = val,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: cargando ? null : consultarUsuario,
+                          icon: cargando 
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Icon(Icons.search),
+                          label: Text(cargando ? 'Buscando...' : 'Consultar Usuario'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              SizedBox(height: 20),
-              if (usuario != null) ...[
+              const SizedBox(height: 20),
+              // Resultado de la búsqueda o mensajes de error
+              if (cargando)
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${usuario!['nombre']} ${usuario!['apellido']}',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 8),
-                        Text('Código: ${usuario!['codigo']}'),
-                        Text('Correo: ${usuario!['correo']}'),
-                        Text('Requisitoriado: ${usuario!['requisitoriado'] ? 'Sí' : 'No'}'),
-                        if (usuario!['requisitoriado']) ...[
-                          SizedBox(height: 8),
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            color: Colors.red[100],
-                            child: Row(
-                              children: [
-                                Icon(Icons.warning, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text('¡USUARIO REQUISITORIADO!', 
-                                     style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                          ),
-                        ],
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 16),
+                        Text('Buscando usuario...'),
                       ],
                     ),
                   ),
+                )
+              else if (usuario == null)
+                Card(
+                  color: Colors.yellow[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: const [
+                        Icon(Icons.info_outline, color: Colors.orange, size: 40),
+                        SizedBox(height: 12),
+                        Text('Ingresa un código y presiona "Consultar Usuario" para buscar.',
+                          style: TextStyle(color: Colors.orange)),
+                      ],
+                    ),
+                  ),
+                )
+              else if (usuario is! Map || !(usuario?.containsKey('nombre') ?? false) || !(usuario?.containsKey('apellido') ?? false))
+                Card(
+                  color: Colors.red[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.error, color: Colors.red, size: 40),
+                        const SizedBox(height: 12),
+                        const Text('No se pudo obtener la información del usuario. Verifica el código o contacta soporte.', style: TextStyle(color: Colors.red)),
+                        Text('Respuesta recibida: ' + usuario.toString(), style: const TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Builder(
+                  builder: (context) {
+                    try {
+                      final nombre = usuario?['nombre']?.toString() ?? '-';
+                      final apellido = usuario?['apellido']?.toString() ?? '-';
+                      final codigoVal = usuario?['codigo']?.toString() ?? '-';
+                      final correo = usuario?['correo']?.toString() ?? '-';
+                      final esRequisitoriado = usuario?['requisitoriado'] == true || usuario?['requisitoriado'] == 1 || usuario?['requisitoriado'] == 'true';
+                      return Card(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: esRequisitoriado 
+                                  ? [Colors.red[50]!, Colors.red[100]!]
+                                  : [Colors.white, Colors.grey[50]!],
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 30,
+                                      backgroundColor: esRequisitoriado ? Colors.red : Colors.blue,
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 35,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '$nombre $apellido',
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: esRequisitoriado ? Colors.red : Colors.green,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              esRequisitoriado ? 'REQUISITORIADO' : 'ACTIVO',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                _buildInfoRow(Icons.badge, 'Código', codigoVal),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(Icons.email, 'Correo', correo),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  Icons.info,
+                                  'Estado',
+                                  esRequisitoriado ? 'Usuario con requisitoria' : 'Usuario sin requisitoria'
+                                ),
+                                if (esRequisitoriado) ...[
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[100],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.red),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.warning, color: Colors.red),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '¡USUARIO REQUISITORIADO!',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    } catch (e, st) {
+                      print('Error mostrando usuario: $e\n$st');
+                      return Card(
+                        color: Colors.red[50],
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.error, color: Colors.red, size: 40),
+                              const SizedBox(height: 12),
+                              const Text('Error inesperado mostrando los datos del usuario.', style: TextStyle(color: Colors.red)),
+                              Text(e.toString(), style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
-              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, dynamic value) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.grey[600], size: 20),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value?.toString() ?? '-',
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -945,17 +1208,27 @@ class _EditarUsuarioScreenState extends State<EditarUsuarioScreen> {
     try {
       final url = 'https://percepcion1314-production.up.railway.app/usuario/$codigo';
       final resp = await http.get(Uri.parse(url));
-      
+      print('Respuesta backend (editar): ${resp.body}');
       if (resp.statusCode == 200) {
         final usuario = json.decode(resp.body);
-        setState(() {
-          usuarioActual = usuario;
-          nombre = usuario['nombre'];
-          apellido = usuario['apellido'];
-          correo = usuario['correo'];
-          requisitoriado = usuario['requisitoriado'];
-          cargando = false;
-        });
+        if (usuario is Map) {
+          setState(() {
+            usuarioActual = Map<String, dynamic>.from(usuario);
+            nombre = usuarioActual?['nombre'] ?? '';
+            apellido = usuarioActual?['apellido'] ?? '';
+            correo = usuarioActual?['correo'] ?? '';
+            requisitoriado = usuarioActual?['requisitoriado'] == true || usuarioActual?['requisitoriado'] == 1;
+            cargando = false;
+          });
+        } else {
+          setState(() {
+            usuarioActual = null;
+            cargando = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Respuesta inesperada del servidor.')),
+          );
+        }
       } else {
         setState(() {
           cargando = false;
@@ -1048,97 +1321,384 @@ class _EditarUsuarioScreenState extends State<EditarUsuarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Editar Usuario Existente')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Código del usuario',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (val) => codigo = val,
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: cargando ? null : cargarUsuario,
-                child: cargando 
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Cargar Usuario'),
-              ),
-              if (usuarioActual != null) ...[
-                SizedBox(height: 20),
-                Text(
-                  'Editando: ${usuarioActual!['nombre']} ${usuarioActual!['apellido']}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Nombre',
-                    border: OutlineInputBorder(),
-                  ),
-                  initialValue: nombre,
-                  onChanged: (val) => nombre = val,
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Apellido',
-                    border: OutlineInputBorder(),
-                  ),
-                  initialValue: apellido,
-                  onChanged: (val) => apellido = val,
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Correo',
-                    border: OutlineInputBorder(),
-                  ),
-                  initialValue: correo,
-                  onChanged: (val) => correo = val,
-                ),
-                SizedBox(height: 16),
-                SwitchListTile(
-                  title: Text('Requisitoriado'),
-                  value: requisitoriado,
-                  onChanged: (val) => setState(() => requisitoriado = val),
-                ),
-                SizedBox(height: 16),
-                Text('Nueva imagen (opcional):'),
-                SizedBox(height: 10),
-                imagen == null
-                    ? Text('No hay imagen seleccionada')
-                    : Image.file(imagen!, height: 150),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: pickImageCamera,
-                      child: Text('Tomar Foto'),
-                    ),
-                    ElevatedButton(
-                      onPressed: pickImageGallery,
-                      child: Text('Subir Foto'),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: cargando ? null : actualizarUsuario,
-                  child: cargando 
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Actualizar Usuario'),
-                ),
-              ],
-            ],
+      appBar: AppBar(
+        title: const Text('Editar Usuario'),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF6750A4), Color(0xFF9C27B0)],
+            ),
           ),
         ),
       ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF8F9FA), Color(0xFFE8EAF6)],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                // Header con icono
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 40,
+                          color: Colors.purple,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Editar Usuario',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Campo de búsqueda
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Código del usuario',
+                            prefixIcon: const Icon(Icons.badge, color: Colors.purple),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.purple, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          onChanged: (val) => codigo = val,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: cargando ? null : cargarUsuario,
+                            icon: cargando 
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.search),
+                            label: Text(cargando ? 'Cargando...' : 'Cargar Usuario'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Formulario de edición
+                if (usuarioActual != null) ...[
+                  const SizedBox(height: 20),
+                  Builder(
+                    builder: (context) {
+                      try {
+                        final nombreVal = usuarioActual?['nombre']?.toString() ?? '-';
+                        final apellidoVal = usuarioActual?['apellido']?.toString() ?? '-';
+                        final correoVal = usuarioActual?['correo']?.toString() ?? '-';
+                        final esRequisitoriado = usuarioActual?['requisitoriado'] == true || usuarioActual?['requisitoriado'] == 1 || usuarioActual?['requisitoriado'] == 'true';
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 25,
+                                      backgroundColor: esRequisitoriado ? Colors.red : Colors.blue,
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 30,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Editando: $nombreVal $apellidoVal',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: esRequisitoriado ? Colors.red : Colors.green,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              esRequisitoriado ? 'REQUISITORIADO' : 'ACTIVO',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                // Campos de edición
+                                _buildEditTextField(
+                                  label: 'Nombre',
+                                  icon: Icons.person,
+                                  initialValue: nombre,
+                                  onChanged: (val) => nombre = val,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildEditTextField(
+                                  label: 'Apellido',
+                                  icon: Icons.person_outline,
+                                  initialValue: apellido,
+                                  onChanged: (val) => apellido = val,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildEditTextField(
+                                  label: 'Correo',
+                                  icon: Icons.email,
+                                  initialValue: correo,
+                                  onChanged: (val) => correo = val,
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: SwitchListTile(
+                                    title: const Text('Requisitoriado'),
+                                    subtitle: const Text('Marcar si el usuario tiene requisitoria'),
+                                    value: requisitoriado,
+                                    onChanged: (val) => setState(() => requisitoriado = val),
+                                    activeColor: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      } catch (e, st) {
+                        print('Error mostrando usuario a editar: $e\n$st');
+                        return Card(
+                          color: Colors.red[50],
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.error, color: Colors.red, size: 40),
+                                const SizedBox(height: 12),
+                                const Text('Error inesperado mostrando los datos del usuario a editar.', style: TextStyle(color: Colors.red)),
+                                Text(e.toString(), style: const TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  
+                  // Sección de imagen
+                  const SizedBox(height: 20),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Nueva imagen (opcional):',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          imagen == null
+                              ? Container(
+                                  height: 200,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.camera_alt,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'No hay imagen seleccionada',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Container(
+                                  height: 200,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 5),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.file(imagen!, fit: BoxFit.cover),
+                                  ),
+                                ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: pickImageCamera,
+                                  icon: const Icon(Icons.camera_alt),
+                                  label: const Text('Cámara'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: pickImageGallery,
+                                  icon: const Icon(Icons.photo_library),
+                                  label: const Text('Galería'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Botón de actualización
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: cargando ? null : actualizarUsuario,
+                      icon: cargando 
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save),
+                      label: Text(cargando ? 'Actualizando...' : 'Actualizar Usuario'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditTextField({
+    required String label,
+    required IconData icon,
+    required String initialValue,
+    required Function(String) onChanged,
+  }) {
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.purple),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.purple, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
+      ),
+      initialValue: initialValue,
+      onChanged: onChanged,
     );
   }
 }
