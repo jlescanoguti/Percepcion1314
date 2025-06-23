@@ -78,36 +78,36 @@ if not verificar_dataset():
 
 # === Cargar dataset ===
 try:
-    dataset = datasets.ImageFolder(DATASET_DIR, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
-    
-    # === Guardar clases ===
-    clases = dataset.classes
-    with open(CLASES_PATH, "wb") as f:
-        pickle.dump(clases, f)
-    
+dataset = datasets.ImageFolder(DATASET_DIR, transform=transform)
+dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
+
+# === Guardar clases ===
+clases = dataset.classes
+with open(CLASES_PATH, "wb") as f:
+    pickle.dump(clases, f)
+
     print(f"✅ Dataset cargado con {len(clases)} clases: {clases}")
     
-    # === Entrenamiento del modelo ===
-    model = CNNClasificador(num_classes=len(clases))
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    
+# === Entrenamiento del modelo ===
+model = CNNClasificador(num_classes=len(clases))
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
     print("🚀 Iniciando entrenamiento del modelo...")
-    for epoch in range(10):
-        total_loss = 0
-        for images, labels in dataloader:
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-        print(f"🔁 Época {epoch+1}/10 - Pérdida total: {total_loss:.4f}")
-    
-    # === Guardar modelo entrenado ===
-    torch.save(model.state_dict(), MODEL_PATH)
-    print("✅ Modelo y clases guardados correctamente.")
+for epoch in range(10):
+    total_loss = 0
+    for images, labels in dataloader:
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    print(f"🔁 Época {epoch+1}/10 - Pérdida total: {total_loss:.4f}")
+
+# === Guardar modelo entrenado ===
+torch.save(model.state_dict(), MODEL_PATH)
+print("✅ Modelo y clases guardados correctamente.")
     
 except Exception as e:
     print(f"❌ Error durante el entrenamiento: {e}")

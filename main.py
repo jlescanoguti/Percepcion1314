@@ -147,7 +147,7 @@ class ExtractorEmbeddings(torch.nn.Module):
 try:
     with open("clases.pkl", "rb") as f:
         clases = pickle.load(f)
-    
+
     if len(clases) == 0:
         print("⚠️ No hay clases disponibles. El modelo está vacío.")
         clases = []
@@ -269,16 +269,16 @@ async def registrar_usuario(
         try:
             with open("clases.pkl", "rb") as f:
                 clases = pickle.load(f)
-            
-            if len(clases) > 0:
-                model = CNNClasificador(num_classes=len(clases))
-                model.load_state_dict(torch.load("cnn_model.pth", map_location="cpu"))
-                model.eval()
-                extractor = ExtractorEmbeddings(model)
-                extractor.eval()
-                print(f"✅ Modelo recargado con {len(clases)} clases")
-            else:
-                print("⚠️ Modelo vacío, usando embeddings básicos")
+                
+                if len(clases) > 0:
+                    model = CNNClasificador(num_classes=len(clases))
+                    model.load_state_dict(torch.load("cnn_model.pth", map_location="cpu"))
+                    model.eval()
+                    extractor = ExtractorEmbeddings(model)
+                    extractor.eval()
+                    print(f"✅ Modelo recargado con {len(clases)} clases")
+                else:
+                    print("⚠️ Modelo vacío, usando embeddings básicos")
         except Exception as e:
             print(f"⚠️ Error al recargar modelo: {e}")
             print("💡 Continuando con embeddings básicos...")
@@ -301,13 +301,14 @@ async def registrar_usuario(
 
         # Verificar duplicados con múltiples embeddings (solo si hay usuarios existentes)
         cursor.execute("SELECT COUNT(*) FROM usuario")
-        if cursor.fetchone()[0] > 0:
+        count_result = cursor.fetchone()
+        if count_result and count_result[0] > 0:
             cursor.execute("SELECT kp FROM usuario")
-            for (kp_json,) in cursor.fetchall():
+            for row in cursor.fetchall():
+                kp_json = row[0]
                 if kp_json:  # Verificar que no sea None
                     try:
                         embeddings_almacenados = [torch.tensor(emb, dtype=torch.float32) for emb in json.loads(str(kp_json))]
-                        
                         for embedding_actual in embeddings:
                             similitud, _ = comparar_embeddings_robustos(embedding_actual, embeddings_almacenados)
                             if similitud > 0.75:  # Threshold más estricto
@@ -452,14 +453,13 @@ async def comparar_rostro(imagen: UploadFile = File(...)):
         usuario_encontrado = None
         
         for usuario in usuarios:
-            if usuario["kp"]:  # Verificar que no sea None
+            kp_json = usuario.get("kp")
+            if kp_json:  # Verificar que no sea None
                 try:
-                    embeddings_almacenados = [torch.tensor(emb, dtype=torch.float32) for emb in json.loads(str(usuario["kp"]))]
-                    
+                    embeddings_almacenados = [torch.tensor(emb, dtype=torch.float32) for emb in json.loads(str(kp_json))]
                     # Comparar con cada embedding actual
                     for embedding_actual in embeddings_actuales:
                         similitud, sim_cosine = comparar_embeddings_robustos(embedding_actual, embeddings_almacenados)
-                        
                         if similitud > mejor_similitud and similitud > 0.70:
                             mejor_similitud = similitud
                             usuario_encontrado = usuario
