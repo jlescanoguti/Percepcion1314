@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+torch
+torchvision
+Pillow
+mysql-connector-python
+python-multipart
+opencv-python
+numpy
