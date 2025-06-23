@@ -28,12 +28,12 @@ app.add_middleware(
 
 # Configuración MySQL
 config = {
-    'user': 'root',
-    'password': 'aYAWzuozJBVbtVsSimsrsHAdlNygEfGh',
-    'host': 'trolley.proxy.rlwy.net',
-    'port': '40718',
-    'database': 'railway'
-}
+       'user': os.environ.get('DB_USER'),
+       'password': os.environ.get('DB_PASSWORD'),
+       'host': os.environ.get('DB_HOST'),
+       'port': os.environ.get('DB_PORT'),
+       'database': os.environ.get('DB_NAME')
+   }
 
 # === FUNCIONES DE PREPROCESAMIENTO MEJORADO ===
 def detectar_y_recortar_rostro(imagen: Image.Image) -> Image.Image:
