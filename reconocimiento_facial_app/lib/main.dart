@@ -107,7 +107,7 @@ class _RegistrarUsuarioScreenState extends State<RegistrarUsuarioScreen> {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://0ba1-2800-200-fdc0-3874-e950-9397-e5f4-73d0.ngrok-free.app/registrar_usuario'),
+        Uri.parse('https://percepcion1314-production.up.railway.app/registrar_usuario'),
       );
       request.fields['nombre'] = nombre;
       request.fields['apellido'] = apellido;
@@ -213,7 +213,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
   }
 
   Future<void> cargarUsuarios() async {
-    final url = 'https://0ba1-2800-200-fdc0-3874-e950-9397-e5f4-73d0.ngrok-free.app/usuarios';
+    final url = 'https://percepcion1314-production.up.railway.app/usuarios';
     final resp = await http.get(Uri.parse(url));
     if (resp.statusCode == 200) {
       setState(() {
