@@ -1,7 +1,0 @@
-host = "mysql.railway.internal"
-port = 3306
-user = "root"
-password = "fTYMTAYZqsLCnLJalSbBOKssAFEmovIg"
-database = "railway"
-url = mysql://root:fTYMTAYZqsLCnLJalSbBOKssAFEmovIg@mysql.railway.internal:3306/railway
-url publica = mysql://root:fTYMTAYZqsLCnLJalSbBOKssAFEmovIg@hopper.proxy.rlwy.net:15015/railway

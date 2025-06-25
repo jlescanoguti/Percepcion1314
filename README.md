@@ -1,101 +1,245 @@
-# Percepcion1314
-Reconocimiento Facial Semana 13 y 14
+# Sistema de Reconocimiento Facial - Gestión de Asistencias
 
-## 🚀 Sistema Mejorado de Reconocimiento Facial
+Sistema completo de reconocimiento facial para gestión de asistencias en salones de clase, desarrollado con FastAPI, PyTorch y MySQL.
 
-Este sistema ha sido mejorado con técnicas avanzadas de preprocesamiento, data augmentation y métricas de similitud mejoradas para aumentar la precisión y robustez del reconocimiento facial.
+## 🚀 Características
 
-### ✨ Mejoras Implementadas
+- **Reconocimiento Facial**: Modelo CNN ligero entrenado con PyTorch
+- **Gestión de Alumnos**: Registro con fotos y datos personales
+- **Sesiones de Asistencia**: Crear, gestionar y finalizar sesiones
+- **Reconocimiento Automático**: Pasar asistencia con reconocimiento facial
+- **Reportes**: Generar reportes detallados de asistencia
+- **API REST**: Endpoints completos para integración con frontend
 
-- **Detección automática de rostros** usando OpenCV Haar Cascade
-- **Data augmentation en tiempo real** (11 variaciones por imagen)
-- **Múltiples embeddings por usuario** para mayor robustez
-- **Normalización L2** de embeddings
-- **Métricas de similitud combinadas** (coseno + euclidiana)
-- **Threshold más estricto** para reducir falsos positivos
+## 🛠️ Tecnologías
 
-## 📋 Instalación y Configuración
-
-### 1. Instalar dependencias
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Verificar archivos necesarios
-El sistema requiere los siguientes archivos:
-- `haarcascade_frontalface_default.xml` (clasificador Haar)
-- `cnn_model.pth` (modelo entrenado)
-- `clases.pkl` (clases/personas registradas)
-
-### 3. Ejecutar el servidor
-```bash
-uvicorn main:app --reload
-```
-
-### 4. Probar la aplicación
-Utilizar la carpeta "rostros" que contiene 34 imágenes de prueba.
-
-## 🔧 API Endpoints
-
-### Gestión de Usuarios
-- `POST /registrar_usuario` - Registrar nuevo usuario con foto
-- `GET /usuarios` - Listar todos los usuarios
-- `GET /usuario/{codigo}` - Consultar usuario por código
-- `PUT /usuario/{codigo}` - Actualizar usuario existente
-- `DELETE /usuario/{codigo}` - Eliminar usuario
-- `DELETE /reiniciar_usuarios` - Limpiar base de datos
-
-### Reconocimiento Facial
-- `POST /comparar_rostro` - Comparar rostro capturado con base de datos
-
-## 📊 Mejoras de Rendimiento
-
-- **+15-20%** más preciso en reconocimiento del mismo rostro
-- **+25%** más efectivo en detección de duplicados
-- **-30%** reducción de falsos positivos
-- **+40%** mejor con diferentes ángulos
-- **+35%** mejor con diferente iluminación
-
-## 🛠️ Solución de Problemas
-
-### Error de Dataset Vacío
-Si aparece el error "Found no valid file for the classes", el sistema ahora maneja automáticamente esta situación:
-- Crea un modelo vacío temporal
-- Permite registrar el primer usuario
-- Reentrena automáticamente cuando hay imágenes válidas
-
-### Archivos Faltantes
-El sistema verifica automáticamente los archivos necesarios y los crea si es necesario.
+- **Backend**: FastAPI (Python 3.13+)
+- **IA/ML**: PyTorch, torchvision
+- **Base de Datos**: MySQL
+- **Procesamiento de Imágenes**: Pillow
+- **Despliegue**: Docker, Railway
 
 ## 📁 Estructura del Proyecto
 
 ```
 Percepcion1314/
-├── main.py                    # API principal con mejoras
-├── entrenar_modelo.py         # Script de entrenamiento mejorado
-├── requirements.txt           # Dependencias actualizadas
-├── MEJORAS_SISTEMA.md         # Documentación de mejoras
-├── haarcascade_frontalface_default.xml  # Clasificador Haar
-├── cnn_model.pth             # Modelo CNN entrenado
-├── clases.pkl                # Clases/personas registradas
-├── dataset_augmented/        # Dataset aumentado
-└── rostros/                  # 34 imágenes de prueba
+├── main.py                 # API FastAPI principal
+├── entrenar_modelo.py      # Script de entrenamiento del modelo
+├── migrar_imagenes.py      # Migración de imágenes
+├── test_api.py            # Script de pruebas
+├── requirements.txt       # Dependencias Python
+├── Dockerfile            # Configuración Docker
+├── dataset_augmented/    # Dataset con imágenes por alumno
+├── rostros/              # Imágenes originales
+├── modelo_reconocimiento.pth  # Modelo entrenado
+├── clases_modelo.json    # Clases del modelo
+└── README.md
 ```
 
-## 🎯 Casos de Uso
+## 🔧 Instalación
 
-1. **Registro de Usuario**: El sistema detecta automáticamente el rostro, genera 11 variaciones y extrae embeddings robustos
-2. **Comparación de Rostros**: Usa múltiples métricas y threshold optimizado para mayor precisión
-3. **Detección de Duplicados**: Threshold más estricto (0.75) para evitar registros duplicados
+### 1. Clonar el repositorio
+```bash
+git clone <url-del-repositorio>
+cd Percepcion1314
+```
 
-## 📈 Resultados Esperados
+### 2. Instalar dependencias
+```bash
+pip install -r requirements.txt
+```
 
-El sistema mejorado debería:
-- Reconocer el mismo rostro en imágenes diferentes con mayor precisión
-- Detectar duplicados de manera más efectiva
-- Manejar mejor las variaciones de iluminación y ángulo
-- Proporcionar resultados más confiables
+### 3. Configurar base de datos
+Crear una base de datos MySQL y configurar las variables de entorno:
+```bash
+export MYSQLUSER=tu_usuario
+export MYSQLPASSWORD=tu_password
+export MYSQLHOST=localhost
+export MYSQLPORT=3306
+export MYSQLDATABASE=asistencias_db
+```
 
----
+### 4. Migrar imágenes existentes
+```bash
+python migrar_imagenes.py
+```
 
-**Nota**: Las mejoras mantienen compatibilidad total con el sistema existente y no requieren cambios en la base de datos.
+### 5. Entrenar modelo inicial
+```bash
+python entrenar_modelo.py
+```
+
+### 6. Ejecutar la aplicación
+```bash
+python main.py
+```
+
+## 📡 Endpoints de la API
+
+### Gestión de Alumnos
+- `POST /alumnos` - Registrar nuevo alumno
+- `GET /alumnos` - Listar todos los alumnos
+
+### Gestión de Sesiones
+- `POST /crear-sesion` - Crear nueva sesión
+- `GET /listar-sesiones` - Listar todas las sesiones
+- `POST /finalizar-sesion/{sesion_id}` - Finalizar sesión
+
+### Reconocimiento Facial
+- `POST /asistencia/{sesion_id}` - Pasar asistencia con foto
+
+### Reportes
+- `GET /reporte-asistencia/{sesion_id}` - Generar reporte de asistencia
+
+### Utilidades
+- `GET /` - Endpoint raíz
+- `DELETE /reiniciar_datos` - Reiniciar base de datos
+
+## 🔄 Flujo de Trabajo
+
+### 1. Registrar Alumnos
+```bash
+curl -X POST "http://localhost:8000/alumnos" \
+  -F "nombre=Juan" \
+  -F "apellido=Pérez" \
+  -F "codigo=2024001" \
+  -F "correo=juan.perez@email.com" \
+  -F "foto=@foto.jpg"
+```
+
+### 2. Crear Sesión
+```bash
+curl -X POST "http://localhost:8000/crear-sesion" \
+  -F "nombre=Clase de Matemáticas"
+```
+
+### 3. Pasar Asistencia
+```bash
+curl -X POST "http://localhost:8000/asistencia/1" \
+  -F "foto=@foto_alumno.jpg"
+```
+
+### 4. Generar Reporte
+```bash
+curl -X GET "http://localhost:8000/reporte-asistencia/1"
+```
+
+## 🧪 Pruebas
+
+Ejecutar el script de pruebas:
+```bash
+python test_api.py
+```
+
+## 🐳 Despliegue con Docker
+
+### Construir imagen
+```bash
+docker build -t sistema-asistencias .
+```
+
+### Ejecutar contenedor
+```bash
+docker run -p 8000:8000 \
+  -e MYSQLUSER=tu_usuario \
+  -e MYSQLPASSWORD=tu_password \
+  -e MYSQLHOST=tu_host \
+  -e MYSQLPORT=3306 \
+  -e MYSQLDATABASE=asistencias_db \
+  sistema-asistencias
+```
+
+## 📊 Base de Datos
+
+### Tablas Principales
+
+#### `alumnos`
+- `id` (INT, PK)
+- `nombre` (VARCHAR)
+- `apellido` (VARCHAR)
+- `codigo` (VARCHAR, UNIQUE)
+- `correo` (VARCHAR)
+- `foto` (VARCHAR)
+- `fecha_registro` (TIMESTAMP)
+
+#### `sesiones`
+- `id` (INT, PK)
+- `nombre` (VARCHAR)
+- `fecha_inicio` (TIMESTAMP)
+- `fecha_fin` (TIMESTAMP)
+- `estado` (ENUM: 'activa', 'finalizada')
+
+#### `asistencias`
+- `id` (INT, PK)
+- `id_sesion` (INT, FK)
+- `id_alumno` (INT, FK)
+- `estado` (VARCHAR)
+- `fecha_hora` (TIMESTAMP)
+
+## 🤖 Modelo de IA
+
+### Arquitectura CNN
+- **Entrada**: Imágenes RGB 100x100 píxeles
+- **Capas Convolucionales**: 3 capas con ReLU y MaxPooling
+- **Capas Densa**: 2 capas fully connected
+- **Salida**: Clasificación por alumno
+
+### Entrenamiento
+- **Data Augmentation**: Rotación, zoom, brillo, contraste
+- **Optimizador**: Adam
+- **Función de Pérdida**: CrossEntropyLoss
+- **Épocas**: 10 (configurable)
+
+## 🔧 Configuración Avanzada
+
+### Variables de Entorno
+```bash
+# Base de datos
+MYSQLUSER=usuario
+MYSQLPASSWORD=password
+MYSQLHOST=host
+MYSQLPORT=3306
+MYSQLDATABASE=nombre_db
+
+# API
+HOST=0.0.0.0
+PORT=8000
+```
+
+### Parámetros del Modelo
+- `IMG_SIZE`: Tamaño de imagen (default: 100)
+- `BATCH_SIZE`: Tamaño de batch (default: 32)
+- `EPOCHS`: Número de épocas (default: 10)
+- `LEARNING_RATE`: Tasa de aprendizaje (default: 0.001)
+
+## 🚨 Solución de Problemas
+
+### Error de conexión a MySQL
+- Verificar variables de entorno
+- Comprobar que MySQL esté ejecutándose
+- Verificar credenciales
+
+### Error de modelo no encontrado
+- Ejecutar `python entrenar_modelo.py`
+- Verificar que existan `modelo_reconocimiento.pth` y `clases_modelo.json`
+
+### Error de reconocimiento
+- Verificar calidad de la imagen
+- Comprobar que el alumno esté registrado
+- Reentrenar modelo si es necesario
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT.
+
+## 👥 Contribución
+
+1. Fork el proyecto
+2. Crear una rama para tu feature
+3. Commit tus cambios
+4. Push a la rama
+5. Abrir un Pull Request
+
+## 📞 Soporte
+
+Para soporte técnico o preguntas, contactar al equipo de desarrollo.

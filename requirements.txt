@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 mysql-connector-python
-face_recognition
 python-multipart
 Pillow
-face_recognition_models==0.3.0
+torch
+torchvision
+numpy
