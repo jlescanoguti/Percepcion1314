@@ -18,7 +18,6 @@ WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install --upgrade pip
-RUN pip install git+https://github.com/ageitgey/face_recognition_models
 RUN pip install -r requirements.txt
 
 COPY . .

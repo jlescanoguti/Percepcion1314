@@ -4,3 +4,4 @@ mysql-connector-python
 face_recognition
 python-multipart
 Pillow
+face_recognition_models @ git+https://github.com/ageitgey/face_recognition_models

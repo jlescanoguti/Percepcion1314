@@ -75,4 +75,22 @@ async def registrar_alumno(
 
     return {"mensaje": "Alumno registrado exitosamente."}
 
+@app.delete("/reiniciar_datos")
+def reiniciar_datos():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Vaciar las tablas en orden para evitar conflictos de claves foráneas
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+        cursor.execute("TRUNCATE TABLE asistencias;")
+        cursor.execute("TRUNCATE TABLE sesiones;")
+        cursor.execute("TRUNCATE TABLE alumnos;")
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"mensaje": "Datos reiniciados correctamente."}
+    except Exception as e:
+        return {"error": f"Error al reiniciar datos: {str(e)}"}
+
 # Aquí puedes agregar los siguientes endpoints para el sistema de asistencias 
