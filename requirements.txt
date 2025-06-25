@@ -1,9 +1,6 @@
 fastapi
 uvicorn
-torch
-torchvision
-Pillow
 mysql-connector-python
+face_recognition
 python-multipart
-opencv-python-headless
-numpy
+Pillow
