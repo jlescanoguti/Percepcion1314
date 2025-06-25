@@ -1,18 +1,4 @@
-FROM python:3.12-slim
-
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    libopenblas-dev \
-    liblapack-dev \
-    libx11-dev \
-    libgtk-3-dev \
-    libboost-python-dev \
-    libboost-thread-dev \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
 
 WORKDIR /app
 
@@ -22,8 +8,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-RUN chmod +x /app/start.sh
-
-EXPOSE 8000
-
-ENTRYPOINT ["/app/start.sh"]
+# No es necesario start.sh, la imagen base ya ejecuta Uvicorn correctamente
+# El puerto 80 es el predeterminado en la imagen base
+EXPOSE 80
